@@ -1,0 +1,95 @@
+# Job alert settings. Edit this file to change what you get emailed about.
+# Matching is case-insensitive.
+
+[titles]
+# A job title must contain at least one of these phrases.
+include = [
+  "project manager",
+  "program manager",
+  "programme manager",
+  "project lead",
+  "project management",
+  "pmo",
+  "business operations",
+  "operations manager",
+  "manager, operations",
+  "manager of operations",
+  "director of operations",
+  "operations director",
+  "operations lead",
+  "business manager",
+]
+# Titles containing any of these are skipped.
+# To skip a whole field, add it here, e.g. "construction" or "software".
+exclude = [
+  "intern",
+  "internship",
+  "co-op",
+  "coop",
+  "student",
+  "junior",
+  "jr",
+  "assistant",
+  "entry level",
+]
+
+[location]
+# Remote jobs are allowed if they hire in Canada.
+remote_ok = true
+# In-person or hybrid jobs must be in one of these places (roughly 45 min from Dundas).
+cities = [
+  "Dundas",
+  "Hamilton",
+  "Ancaster",
+  "Stoney Creek",
+  "Flamborough",
+  "Waterdown",
+  "Binbrook",
+  "Burlington",
+  "Grimsby",
+  "Lincoln",
+  "Beamsville",
+  "Brantford",
+  "Paris",
+  "Caledonia",
+  "Oakville",
+  "Milton",
+  "Cambridge",
+  "Guelph",
+  # Borderline commutes; remove the "#" to include them:
+  # "Kitchener",
+  # "Mississauga",
+  # "St. Catharines",
+]
+
+[salary]
+# Jobs are skipped only when they list a salary whose TOP is below this.
+# Jobs with no salary listed are still sent (marked "salary not listed").
+minimum = 85000
+hours_per_year = 2080
+usd_to_cad = 1.35
+
+# How often each source is checked, in minutes. The tool itself runs every
+# 30 minutes, so anything below 30 just means "every run".
+# Free API keys have daily limits, so don't go much lower than these.
+[sources.adzuna_local]
+every_minutes = 30
+where = "Hamilton, Ontario"
+distance_km = 55
+keywords = "project program operations"
+
+[sources.adzuna_remote]
+every_minutes = 120
+keywords = "project program operations"
+
+[sources.jooble]
+every_minutes = 60
+where = "Hamilton, ON"
+radius_km = "80"
+queries = ["project manager", "program manager", "operations manager", "business operations"]
+remote_queries = ["remote project manager", "remote operations manager"]
+
+[sources.remotive]
+# Remotive asks that its free API not be called more than a few times a day.
+every_minutes = 360
+categories = ["project-management", "operations"]
