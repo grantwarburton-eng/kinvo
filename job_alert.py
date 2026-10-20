@@ -200,7 +200,7 @@ def remotive(cfg, salary_cfg):
 
 # ---------- filtering ----------
 
-def check_job(job, config, include_re, exclude_re, city_re):
+def check_job(job, config, include_re, exclude_re, city_re, not_local_re=None):
     """Return (ok, reason_or_label)."""
     title = job["title"]
     if not include_re.search(title):
@@ -214,6 +214,8 @@ def check_job(job, config, include_re, exclude_re, city_re):
 
     text = " ".join([title, job["location"], job["description"]])
     in_area = bool(city_re.search(job["location"]))
+    if in_area and not_local_re and not_local_re.search(job["location"]):
+        in_area = False
     is_remote = job["remote_hint"] or bool(REMOTE_WORDS.search(text))
     is_hybrid = bool(HYBRID_WORDS.search(text))
 
@@ -305,6 +307,7 @@ def main():
     include_re = phrase_regex(config["titles"]["include"])
     exclude_re = phrase_regex(config["titles"].get("exclude", []))
     city_re = phrase_regex(config["location"]["cities"])
+    not_local_re = phrase_regex(config["location"].get("exclude_places", []))
     src, sal = config["sources"], config["salary"]
 
     sources = {
@@ -340,7 +343,7 @@ def main():
         dup_key = "tc:" + normalize(job["title"]) + "|" + normalize(job["company"])
         if job["id"] in state["seen"] or dup_key in state["seen"]:
             continue
-        ok, label = check_job(job, config, include_re, exclude_re, city_re)
+        ok, label = check_job(job, config, include_re, exclude_re, city_re, not_local_re)
         state["seen"][job["id"]] = today
         if not ok:
             rejected[label] = rejected.get(label, 0) + 1

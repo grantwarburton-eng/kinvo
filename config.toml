@@ -61,6 +61,16 @@ cities = [
   # "Mississauga",
   # "St. Catharines",
 ]
+# Places elsewhere in Canada that share a name with the cities above.
+# A job whose location mentions any of these is never treated as local.
+exclude_places = [
+  "North Dundas",
+  "South Dundas",
+  "Stormont",
+  "Glengarry",
+  "Hamilton Township",
+  "Cambridge Bay",
+]
 
 [salary]
 # Jobs are skipped only when they list a salary whose TOP is below this.
