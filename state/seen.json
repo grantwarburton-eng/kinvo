@@ -1,7 +1,7 @@
 {
  "last_checked": {
-  "adzuna_local": "2026-10-22T15:42:44.117081+00:00",
-  "adzuna_remote": "2026-10-22T15:42:45.610240+00:00",
+  "adzuna_local": "2026-10-22T19:35:20.254717+00:00",
+  "adzuna_remote": "2026-10-22T19:35:21.394282+00:00",
   "remotive": "2026-10-22T15:42:45.744127+00:00"
  },
  "seen": {
@@ -1248,6 +1248,19 @@
   "adzuna:5937937214": "2026-10-22",
   "adzuna:5937978242": "2026-10-22",
   "adzuna:5938010005": "2026-10-22",
+  "adzuna:5938185764": "2026-10-22",
+  "adzuna:5938185914": "2026-10-22",
+  "adzuna:5938230627": "2026-10-22",
+  "adzuna:5938235805": "2026-10-22",
+  "adzuna:5938235865": "2026-10-22",
+  "adzuna:5938235871": "2026-10-22",
+  "adzuna:5938258830": "2026-10-22",
+  "adzuna:5938278160": "2026-10-22",
+  "adzuna:5938278161": "2026-10-22",
+  "adzuna:5938282290": "2026-10-22",
+  "adzuna:5938282304": "2026-10-22",
+  "adzuna:5938283332": "2026-10-22",
+  "adzuna:5938283429": "2026-10-22",
   "remotive:1185979": "2026-10-19",
   "remotive:1680495": "2026-10-19",
   "remotive:1749306": "2026-10-19",
@@ -1265,6 +1278,7 @@
   "tc:manager project management|american iron and metal": "2026-10-20",
   "tc:mechanical production project lead lead millwright|eclipse automation": "2026-10-21",
   "tc:project manager design land development|urbantech": "2026-10-22",
+  "tc:project manager development execution|turner townsend": "2026-10-22",
   "tc:project manager on demand|estoras group of companies": "2026-10-21",
   "tc:project manager|ats automation": "2026-10-21",
   "tc:project manager|bosch building technologies": "2026-10-20",
