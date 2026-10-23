@@ -1,8 +1,8 @@
 {
  "last_checked": {
-  "adzuna_local": "2026-10-23T19:47:19.513004+00:00",
-  "adzuna_remote": "2026-10-23T19:47:20.403562+00:00",
-  "remotive": "2026-10-23T15:59:24.530850+00:00"
+  "adzuna_local": "2026-10-23T22:41:49.577265+00:00",
+  "adzuna_remote": "2026-10-23T22:41:50.634819+00:00",
+  "remotive": "2026-10-23T22:41:50.795314+00:00"
  },
  "seen": {
   "adzuna:5934063221": "2026-10-19",
@@ -1524,6 +1524,8 @@
   "adzuna:5939602466": "2026-10-23",
   "adzuna:5939603298": "2026-10-23",
   "adzuna:5939603321": "2026-10-23",
+  "adzuna:5939661193": "2026-10-23",
+  "adzuna:5939661697": "2026-10-23",
   "remotive:1185979": "2026-10-19",
   "remotive:1680495": "2026-10-19",
   "remotive:1749306": "2026-10-19",
@@ -1547,6 +1549,7 @@
   "tc:project manager hvac|naylor building partnerships": "2026-10-23",
   "tc:project manager llm expertise|mercor": "2026-10-23",
   "tc:project manager on demand|estoras group of companies": "2026-10-21",
+  "tc:project manager skyline energy|the skyline group of companies": "2026-10-23",
   "tc:project manager|ats automation": "2026-10-21",
   "tc:project manager|bosch building technologies": "2026-10-20",
   "tc:project manager|magna international inc": "2026-10-23",
