@@ -1,7 +1,7 @@
 {
  "last_checked": {
-  "adzuna_local": "2026-10-24T17:41:46.404932+00:00",
-  "adzuna_remote": "2026-10-24T17:41:47.486450+00:00",
+  "adzuna_local": "2026-10-24T19:53:20.818440+00:00",
+  "adzuna_remote": "2026-10-24T19:53:21.630122+00:00",
   "remotive": "2026-10-24T14:40:51.377030+00:00"
  },
  "seen": {
@@ -1902,6 +1902,9 @@
   "adzuna:5940719764": "2026-10-24",
   "adzuna:5940719766": "2026-10-24",
   "adzuna:5940719771": "2026-10-24",
+  "adzuna:5940774567": "2026-10-24",
+  "adzuna:5940774733": "2026-10-24",
+  "adzuna:5940785126": "2026-10-24",
   "remotive:1185979": "2026-10-19",
   "remotive:1680495": "2026-10-19",
   "remotive:1749306": "2026-10-19",
@@ -1923,6 +1926,7 @@
   "tc:manager project management|american iron and metal": "2026-10-20",
   "tc:mechanical production project lead afternoon shift|eclipse automation": "2026-10-24",
   "tc:mechanical production project lead lead millwright|eclipse automation": "2026-10-21",
+  "tc:program manager senior|cleo consulting": "2026-10-24",
   "tc:project manager design land development|urbantech": "2026-10-22",
   "tc:project manager development execution|turner townsend": "2026-10-22",
   "tc:project manager hvac|naylor building partnerships": "2026-10-23",
