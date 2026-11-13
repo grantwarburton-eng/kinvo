@@ -424,7 +424,8 @@ def run(matches, agent_cfg, log=print):
         return result
     if not os.environ.get("ANTHROPIC_API_KEY"):
         log("[agent] ANTHROPIC_API_KEY not set; sending plain alerts")
-        result["plain"] = [(j, "") for j in matches]
+        note = "AI review not run: the ANTHROPIC_API_KEY secret isn't set in GitHub (or is empty)."
+        result["plain"] = [(j, note) for j in matches]
         return result
     try:
         agent = Agent(agent_cfg)
