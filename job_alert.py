@@ -1,14 +1,17 @@
-"""Checks job sites for new Project Manager / Business Operations postings and emails matches.
+"""Checks job sites for new Project Manager / Business Operations postings. Matches go to the
+AI agent (apply_agent.py), which scores fit and drafts a tailored resume and cover letter for
+good ones. Everything is emailed to you for review.
 
-Settings live in config.toml. Secrets come from environment variables:
+Settings live in config.toml and profile/profile.toml. Secrets come from environment variables:
   ADZUNA_APP_ID, ADZUNA_APP_KEY   (required for Adzuna)
   JOOBLE_KEY                      (optional)
   GMAIL_ADDRESS, GMAIL_APP_PASSWORD
   ALERT_TO                        (optional, defaults to GMAIL_ADDRESS)
+  ANTHROPIC_API_KEY               (for the AI step; without it you get plain alerts)
 
 Usage:
-  python job_alert.py              normal run (emails new matches, remembers them)
-  python job_alert.py --dry-run    print matches only; no email, nothing remembered
+  python job_alert.py              normal run (reviews + emails new matches, remembers them)
+  python job_alert.py --dry-run    print matches only; no AI, no email, nothing remembered
   python job_alert.py --force      check every source now, ignoring every_minutes
 """
 
@@ -253,46 +256,136 @@ def is_due(state, name, every_minutes, force):
 
 # ---------- email ----------
 
-def build_email(matches):
-    count = len(matches)
-    first = matches[0]
-    if count == 1:
-        subject = f"New job: {first['title']} at {first['company'] or 'unknown company'}"
-    else:
-        subject = f"{count} new jobs: {first['title']} at {first['company'] or 'unknown'} + {count - 1} more"
+def _esc(v):
+    return html.escape(str(v or ""))
 
-    cards, lines = [], []
-    for j in matches:
-        salary = j["salary_text"] or "Salary not listed"
-        e = {k: html.escape(str(v)) for k, v in j.items()}
-        cards.append(f"""
+
+def _job_header_html(j):
+    salary = j.get("salary_text") or "Salary not listed"
+    return f"""
+  <div style="font-size:17px;font-weight:600"><a href="{_esc(j['url'])}" style="color:#1a56db;text-decoration:none">{_esc(j['title'])}</a></div>
+  <div style="color:#333;margin-top:4px">{_esc(j.get('company')) or 'Company not listed'}</div>
+  <div style="color:#555;margin-top:4px">{_esc(j.get('work_type'))} · {_esc(j.get('location')) or 'Location not listed'}</div>
+  <div style="color:#555;margin-top:4px">{_esc(salary)}</div>"""
+
+
+def _list_html(label, items, color):
+    if not items:
+        return ""
+    lis = "".join(f"<li>{_esc(i)}</li>" for i in items)
+    return f'<div style="margin-top:8px;color:{color}"><b>{label}</b><ul style="margin:4px 0 0 18px;padding:0">{lis}</ul></div>'
+
+
+def build_email(result, skipped_digest):
+    drafted, plain = result["drafted"], result["plain"]
+    total = len(drafted) + len(plain)
+    if drafted:
+        j = drafted[0][0]
+        n = len(drafted)
+        subject = (f"{n} application{'s' if n > 1 else ''} ready to review: {j['title']} at "
+                   f"{j.get('company') or 'unknown'}" + (f" + {n - 1} more" if n > 1 else ""))
+        if plain:
+            subject += f" (and {len(plain)} other match{'es' if len(plain) > 1 else ''})"
+    else:
+        j = plain[0][0]
+        subject = (f"New job: {j['title']} at {j.get('company') or 'unknown company'}" if total == 1 else
+                   f"{total} new jobs: {j['title']} at {j.get('company') or 'unknown'} + {total - 1} more")
+
+    sections, lines, attachments = [], [], []
+
+    if drafted:
+        import documents   # only needed when the agent drafted something
+        cards = []
+        for j, fit, folder in drafted:
+            score_color = "#0a7d32" if fit.score >= 85 else "#b26b00"
+            record = json.loads((folder / "job.json").read_text(encoding="utf-8"))
+            primary = documents.primary_files(record.get("files", []))
+            ext = primary["resume"].rsplit(".", 1)[1]
+            fmt_label = "Word" if ext == "docx" else ext.upper()
+            cards.append(f"""
 <div style="border:1px solid #ddd;border-radius:8px;padding:14px 16px;margin:0 0 12px">
-  <div style="font-size:17px;font-weight:600"><a href="{e['url']}" style="color:#1a56db;text-decoration:none">{e['title']}</a></div>
-  <div style="color:#333;margin-top:4px">{e['company'] or 'Company not listed'}</div>
-  <div style="color:#555;margin-top:4px">{e['work_type']} · {e['location'] or 'Location not listed'}</div>
-  <div style="color:#555;margin-top:4px">{html.escape(salary)}</div>
-  <div style="margin-top:10px"><a href="{e['url']}" style="background:#1a56db;color:#fff;padding:7px 14px;border-radius:6px;text-decoration:none">View &amp; apply</a></div>
+  <div style="display:inline-block;background:{score_color};color:#fff;border-radius:12px;padding:2px 10px;font-size:13px;margin-bottom:8px">Fit {fit.score}/100</div>
+  {_job_header_html(j)}
+  <div style="margin-top:10px;color:#222">{_esc(fit.one_line)}</div>
+  {_list_html("Why you fit", fit.strengths, "#0a5d26")}
+  {_list_html("Gaps", fit.gaps, "#8a4b00")}
+  <div style="margin-top:8px;color:#555"><b>Pay:</b> {_esc(fit.compensation)}</div>
+  {_list_html("What was tailored", record.get("what_was_tailored", []), "#444")}
+  <div style="margin-top:8px;color:#555;font-size:13px">Attached: resume and cover letter ({_esc(fmt_label)}). Also saved in <code>{_esc(folder.relative_to(ROOT).as_posix())}</code>.</div>
+  <div style="margin-top:10px"><a href="{_esc(j['url'])}" style="background:#1a56db;color:#fff;padding:7px 14px;border-radius:6px;text-decoration:none">View posting</a></div>
 </div>""")
-        lines.append(f"{j['title']} — {j['company']}\n{j['work_type']} · {j['location']}\n{salary}\n{j['url']}\n")
+            lines.append(f"[Fit {fit.score}] {j['title']} — {j.get('company')}\n{fit.one_line}\n{j['url']}\n")
+            company = re.sub(r'[\\/:*?"<>|]+', "", j.get("company") or "Job").strip()[:40] or "Job"
+            for which, label in (("resume", "Resume"), ("cover", "Cover Letter")):
+                if (folder / primary[which]).exists():
+                    attachments.append((f"{company} - {label}.{ext}", (folder / primary[which]).read_bytes()))
+        sections.append(f"""<h2 style="font-size:18px;margin:0 0 10px">Ready to review ({len(drafted)})</h2>
+<p style="color:#555;margin:0 0 12px">To apply: on your PC, double-click <b>prefill.bat</b>, pick the job, check the
+pre-filled form and answer anything left blank, then click Submit yourself.</p>
+{''.join(cards)}""")
+
+    if plain:
+        cards = []
+        for j, note in plain:
+            note_html = f'<div style="color:#8a4b00;margin-top:6px;font-size:13px">{_esc(note)}</div>' if note else ""
+            cards.append(f"""
+<div style="border:1px solid #ddd;border-radius:8px;padding:14px 16px;margin:0 0 12px">{_job_header_html(j)}{note_html}
+  <div style="margin-top:10px"><a href="{_esc(j['url'])}" style="background:#1a56db;color:#fff;padding:7px 14px;border-radius:6px;text-decoration:none">View &amp; apply</a></div>
+</div>""")
+            lines.append(f"{j['title']} — {j.get('company')}\n{j.get('work_type')} · {j.get('location')}\n"
+                         f"{j.get('salary_text') or 'Salary not listed'}\n{j['url']}\n")
+        heading = "Other new matches" if drafted else f"Found {len(plain)} new matching job{'s' if len(plain) > 1 else ''}"
+        sections.append(f'<h2 style="font-size:18px;margin:18px 0 10px">{heading}</h2>{"".join(cards)}')
+
+    if skipped_digest:
+        rows = "".join(
+            f'<li style="margin-bottom:6px"><a href="{_esc(s["url"])}">{_esc(s["title"])}</a> — {_esc(s["company"])}'
+            f' <span style="color:#888">(fit {s["score"]})</span><br><span style="color:#666">{_esc(s["reason"])}</span></li>'
+            for s in skipped_digest)
+        sections.append(f"""<h2 style="font-size:16px;margin:18px 0 6px;color:#666">Skipped by the agent ({len(skipped_digest)})</h2>
+<p style="color:#888;font-size:13px;margin:0 0 6px">Passed your filters but scored below your bar. Shown so you can check its judgment
+(turn off with <code>show_skipped</code> in config.toml).</p><ul style="padding-left:18px;font-size:14px">{rows}</ul>""")
 
     body_html = f"""<div style="font-family:Arial,sans-serif;max-width:640px">
-<p style="color:#555">Found {count} new matching job{'s' if count > 1 else ''}:</p>
-{''.join(cards)}
-<p style="color:#999;font-size:12px">Sent by your job alert tool. Edit config.toml to change what's matched.</p>
+{''.join(sections)}
+<p style="color:#999;font-size:12px">Sent by your job search agent. Edit config.toml and profile/profile.toml to change what's matched.</p>
 </div>"""
-    return subject, "\n".join(lines), body_html
+    return subject, "\n".join(lines), body_html, attachments
 
 
-def send_email(subject, text, body_html):
+ATTACHMENT_TYPES = {"docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    "pdf": "application/pdf"}
+
+
+def send_email(subject, text, body_html, attachments=()):
     sender = os.environ["GMAIL_ADDRESS"]
     to = os.environ.get("ALERT_TO") or sender
     msg = EmailMessage()
     msg["Subject"], msg["From"], msg["To"] = subject, f"Job Alerts <{sender}>", to
     msg.set_content(text)
     msg.add_alternative(body_html, subtype="html")
+    for filename, data in attachments:
+        mime = ATTACHMENT_TYPES.get(filename.rsplit(".", 1)[-1].lower(), "application/octet-stream")
+        maintype, subtype = mime.split("/", 1)
+        msg.add_attachment(data, maintype=maintype, subtype=subtype, filename=filename)
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=30) as smtp:
         smtp.login(sender, os.environ["GMAIL_APP_PASSWORD"])
         smtp.send_message(msg)
+
+
+# ---------- AI review ----------
+
+def review_with_agent(jobs, agent_cfg):
+    """Run apply_agent on the matches. If it can't load at all, fall back to plain alerts."""
+    empty = {"drafted": [], "skipped": [], "plain": [], "deferred": []}
+    if not jobs:
+        return empty
+    try:
+        import apply_agent
+    except ImportError as exc:
+        print(f"[agent] couldn't load ({exc}); sending plain alerts")
+        return dict(empty, plain=[(j, "") for j in jobs])
+    return apply_agent.run(jobs, agent_cfg)
 
 
 # ---------- main ----------
@@ -358,12 +451,31 @@ def main():
               f"{j['salary_text'] or 'salary not listed'}\n    {j['url']}")
 
     if args.dry_run:
-        print("(dry run: no email sent, nothing saved)")
+        print("(dry run: no AI review, no email sent, nothing saved)")
         return
 
-    if matches:
-        send_email(*build_email(matches))
+    # Jobs left over from earlier runs (over the per-run draft limit) go first.
+    week_ago = (now() - timedelta(days=7)).strftime("%Y-%m-%d")
+    queue = [j for j in state.get("queue", []) if j.get("queued", today) >= week_ago]
+    to_review = queue + matches
+    result = review_with_agent(to_review, config.get("agent", {}))
+    state["queue"] = [dict(j, queued=j.get("queued", today)) for j in result["deferred"]]
+
+    digest = state.get("skipped_digest", [])
+    if config.get("agent", {}).get("show_skipped", True):
+        for j, fit in result["skipped"]:
+            reason = fit.one_line
+            if fit.dealbreakers_hit:
+                reason = "Dealbreaker: " + "; ".join(fit.dealbreakers_hit)
+            digest.append({"title": j["title"], "company": j.get("company") or "", "url": j["url"],
+                           "score": fit.score, "reason": reason})
+    digest = digest[-50:]
+
+    if result["drafted"] or result["plain"]:
+        send_email(*build_email(result, digest))
         print("Email sent.")
+        digest = []
+    state["skipped_digest"] = digest  # skipped-only runs don't email; they ride along with the next one
     save_state(state)
 
     if attempted and len(failed) == attempted:

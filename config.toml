@@ -18,6 +18,9 @@ include = [
   "operations director",
   "operations lead",
   "business manager",
+  "project coordinator",
+  "production supervisor",
+  "production manager",
 ]
 # Titles containing any of these are skipped.
 # To skip a whole field, add it here, e.g. "construction" or "software".
@@ -79,6 +82,25 @@ minimum = 85000
 hours_per_year = 2080
 usd_to_cad = 1.35
 
+[agent]
+# The AI step: scores each new match against your resume and, for good fits,
+# writes a tailored resume and cover letter. Needs the ANTHROPIC_API_KEY secret;
+# without it you just get the plain alerts as before.
+enabled = true
+model = "claude-opus-5-5"
+# Jobs scoring below this (0-100) are skipped. 70 is a reasonable start; lower it
+# if you're getting too few drafts, raise it if you're getting weak ones.
+min_fit_score = 70
+# Most drafts written per run. Extra matches wait for the next run. This keeps
+# costs predictable (roughly $0.05-0.20 per drafted job).
+max_drafts_per_run = 5
+# File format for the tailored resume and cover letter: ["docx"] (Word, the default),
+# ["pdf"], or ["docx", "pdf"] for both. The first one listed is what gets emailed and uploaded.
+formats = ["docx"]
+# Also list skipped jobs (with the reason) at the bottom of the email, so you can
+# check the agent's judgment. Set to false once you trust it.
+show_skipped = true
+
 # How often each source is checked, in minutes. The tool itself runs every
 # 30 minutes, so anything below 30 just means "every run".
 # Free API keys have daily limits, so don't go much lower than these.
@@ -86,7 +108,7 @@ usd_to_cad = 1.35
 every_minutes = 30
 where = "Hamilton, Ontario"
 distance_km = 55
-keywords = "project program operations"
+keywords = "project program operations production"
 
 [sources.adzuna_remote]
 every_minutes = 120
@@ -96,7 +118,8 @@ keywords = "project program operations"
 every_minutes = 60
 where = "Hamilton, ON"
 radius_km = "80"
-queries = ["project manager", "program manager", "operations manager", "business operations"]
+queries = ["project manager", "program manager", "operations manager", "business operations",
+           "project coordinator", "production supervisor"]
 remote_queries = ["remote project manager", "remote operations manager"]
 
 [sources.remotive]
